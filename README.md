@@ -8,3 +8,6 @@ Implemented:
 - Haar feature extraction
 - Integral image computation
 - VGA output streaming
+
+
+Viola Jones parameters training was performed in python using custom scripts. The trained parameters were then exported to be used in the FPGA implementation. Python training will be made available in the separate repository.
