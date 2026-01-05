@@ -1,0 +1,71 @@
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# VS Code
+.vscode/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+*.egg-info/
+.venv/
+venv/
+.env
+
+# --- Quartus Prime / Intel FPGA build artifacts ---
+# Databases / incremental compilation
+db/**
+incremental_db/**
+greybox_tmp/**
+simulation/**
+output_files/**
+
+# Reports / messages / temporary outputs
+*.rpt
+*.smsg
+*.summary
+*.htm
+*.html
+*.qmsg
+*.log
+*.chg
+*.bak
+*.tmp
+
+# Project/session & generated metadata
+*.qws
+*.jdi
+*.jditmp
+*.sld
+*.pin
+*.done
+*.cdf
+*_pin_model_dump.txt
+
+# Assembler / fitter / mapper intermediates
+*.asm.*
+*.fit.*
+*.map.*
+*.sta.*
+
+# Programming files (usually large) - prefer GitHub Releases if needed
+*.sof
+*.pof
+*.jic
+
+# Quartus IP generation folders/files (commonly generated)
+ip/**
+*.qdb
+*.qdf
+
+# Keep memory init/source assets (do NOT ignore):
+# *.mif, *.hex, *.v, *.sv, *.vhd, *.qsf, *.qpf, *.sdc, *.qip
+
+# --- Allow .gitkeep in ignored build dirs ---
+!db/.gitkeep
+!incremental_db/.gitkeep
+!greybox_tmp/.gitkeep
