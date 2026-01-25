@@ -118,6 +118,32 @@ reg  [99:0] box_w;
 reg  [89:0] box_h;
 reg  [3:0]  box_count;
 
+reg  signed [31:0] stage0_thr_adj;
+reg  signed [31:0] stage1_thr_adj;
+reg  signed [31:0] stage2_thr_adj;
+reg  signed [31:0] stage3_thr_adj;
+
+reg  key1_d;
+reg  key2_d;
+reg  key3_d;
+wire key1_press = key1_d & ~KEY[1];
+wire key2_press = key2_d & ~KEY[2];
+wire key3_press = key3_d & ~KEY[3];
+
+wire [1:0] stage_sel = SW[1:0];
+
+function signed [31:0] step_val;
+	input [1:0] sel;
+	begin
+		case (sel)
+			2'b00: step_val = 32'sd1;
+			2'b01: step_val = 32'sd2;
+			2'b10: step_val = 32'sd4;
+			default: step_val = 32'sd8;
+		endcase
+	end
+endfunction
+
 //=======================================================
 //  Structural coding
 //=======================================================
@@ -191,8 +217,55 @@ always @(posedge clk_25 or negedge KEY[0]) begin
 		box_w <= 100'd0;
 		box_h <= 90'd0;
 		box_count <= 4'd0;
+
+		stage0_thr_adj <= 32'sd0;
+		stage1_thr_adj <= 32'sd0;
+		stage2_thr_adj <= 32'sd0;
+		stage3_thr_adj <= 32'sd0;
+
+		key1_d <= 1'b1;
+		key2_d <= 1'b1;
+		key3_d <= 1'b1;
 	end else begin
 		det_frame_start <= 1'b0;
+
+		key1_d <= KEY[1];
+		key2_d <= KEY[2];
+		key3_d <= KEY[3];
+
+		if (key1_press) begin
+			case (stage_sel)
+				2'd0: stage0_thr_adj <= stage0_thr_adj + step_val(SW[3:2]);
+				2'd1: stage1_thr_adj <= stage1_thr_adj + step_val(SW[3:2]);
+				2'd2: stage2_thr_adj <= stage2_thr_adj + step_val(SW[3:2]);
+				default: stage3_thr_adj <= stage3_thr_adj + step_val(SW[3:2]);
+			endcase
+		end
+		if (key2_press) begin
+			case (stage_sel)
+				2'd0: stage0_thr_adj <= stage0_thr_adj - step_val(SW[3:2]);
+				2'd1: stage1_thr_adj <= stage1_thr_adj - step_val(SW[3:2]);
+				2'd2: stage2_thr_adj <= stage2_thr_adj - step_val(SW[3:2]);
+				default: stage3_thr_adj <= stage3_thr_adj - step_val(SW[3:2]);
+			endcase
+		end
+
+		if (key3_press) begin
+			started <= 1'b0;
+			det_frame_start <= 1'b1;
+			init_delay_cnt <= 10'd0;
+			issue_en <= 1'b0;
+			issue_en_d1 <= 1'b0;
+			issue_en_d2 <= 1'b0;
+			addr_issue <= 17'd0;
+			face_seen <= 1'b0;
+			box_valid <= 10'd0;
+			box_x <= 100'd0;
+			box_y <= 90'd0;
+			box_w <= 100'd0;
+			box_h <= 90'd0;
+			box_count <= 4'd0;
+		end else begin
 
 		if (!started) begin
 			started <= 1'b1;
@@ -225,6 +298,7 @@ always @(posedge clk_25 or negedge KEY[0]) begin
 				end
 			end
 		end
+		end
 
 		issue_en_d1 <= issue_en;
 		issue_en_d2 <= issue_en_d1;
@@ -253,15 +327,20 @@ vj_detector_19x19 #(
 	.II_H(241),
 	.ADDR_W(17),
 	.II_DATA_W(25),
-	.ST0_WEAK(1),
+	.ST0_WEAK(2),
 	.ST1_WEAK(5),
-	.ST2_WEAK(10)
+	.ST2_WEAK(10),
+	.ST3_WEAK(15)
 ) u_vj (
 	.clk(clk_25),
 	.reset_n(KEY[0]),
 	.frame_start(det_frame_start),
 	.pixel_valid(det_pixel_valid),
 	.pixel(det_pixel),
+	.stage0_threshold_adj(stage0_thr_adj),
+	.stage1_threshold_adj(stage1_thr_adj),
+	.stage2_threshold_adj(stage2_thr_adj),
+	.stage3_threshold_adj(stage3_thr_adj),
 	.det_valid(det_valid),
 	.det_x(det_x),
 	.det_y(det_y),

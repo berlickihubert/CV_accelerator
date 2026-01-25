@@ -5,9 +5,10 @@ module vj_detector_19x19 #(
     parameter integer II_H  = 241,
     parameter integer ADDR_W = 17,
     parameter integer II_DATA_W = 25, // 320*240*255 = 19,584,000 < 2^25
-    parameter integer ST0_WEAK = 1,
+    parameter integer ST0_WEAK = 2,
     parameter integer ST1_WEAK = 5,
-    parameter integer ST2_WEAK = 10
+    parameter integer ST2_WEAK = 10,
+    parameter integer ST3_WEAK = 15
 ) (
     input  wire                 clk,
     input  wire                 reset_n,
@@ -15,6 +16,11 @@ module vj_detector_19x19 #(
     input  wire                 frame_start,
     input  wire                 pixel_valid,
     input  wire [7:0]           pixel,
+
+    input  wire signed [31:0]   stage0_threshold_adj,
+    input  wire signed [31:0]   stage1_threshold_adj,
+    input  wire signed [31:0]   stage2_threshold_adj,
+    input  wire signed [31:0]   stage3_threshold_adj,
 
     output wire                 det_valid,
     output wire [9:0]           det_x,
@@ -48,7 +54,7 @@ module vj_detector_19x19 #(
     );
 
     wire build_busy;
-    wire frame_done;
+    wire build_done;
 
     vj_integral_builder_320x240 #(
         .IMG_W(IMG_W),
@@ -67,7 +73,7 @@ module vj_detector_19x19 #(
         .ii_waddr(ii_waddr),
         .ii_wdata(ii_wdata),
         .busy(build_busy),
-        .frame_done(frame_done)
+        .build_done(build_done)
     );
 
     wire scan_busy;
@@ -85,13 +91,20 @@ module vj_detector_19x19 #(
         .II_DATA_W(II_DATA_W),
         .ST0_WEAK(ST0_WEAK),
         .ST1_WEAK(ST1_WEAK),
-        .ST2_WEAK(ST2_WEAK)
+        .ST2_WEAK(ST2_WEAK),
+        .ST3_WEAK(ST3_WEAK),
+        .SCAN_STEP_X(2),
+        .SCAN_STEP_Y(2)
     ) u_scan (
         .clk(clk),
         .reset_n(reset_n),
         .start(scan_start),
         .ii_raddr(ii_raddr),
         .ii_rdata(ii_rdata),
+        .stage0_threshold_adj(stage0_threshold_adj),
+        .stage1_threshold_adj(stage1_threshold_adj),
+        .stage2_threshold_adj(stage2_threshold_adj),
+        .stage3_threshold_adj(stage3_threshold_adj),
         .busy(scan_busy),
         .done(scan_done),
         .det_valid(det_valid),
@@ -108,7 +121,7 @@ module vj_detector_19x19 #(
             scan_start <= 1'b0;
         end else begin
             scan_start <= 1'b0;
-            if (frame_done) begin
+            if (build_done) begin
                 scan_start <= 1'b1;
             end
         end

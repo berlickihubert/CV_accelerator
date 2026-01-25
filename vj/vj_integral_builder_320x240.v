@@ -19,7 +19,7 @@ module vj_integral_builder_320x240 #(
     output reg  [II_DATA_W-1:0] ii_wdata,
 
     output reg                  busy,
-    output reg                  frame_done
+    output reg                  build_done
 );
 
     localparam integer II_STRIDE = II_W;
@@ -44,7 +44,7 @@ module vj_integral_builder_320x240 #(
             ii_waddr <= {ADDR_W{1'b0}};
             ii_wdata <= {II_DATA_W{1'b0}};
             busy <= 1'b0;
-            frame_done <= 1'b0;
+            build_done <= 1'b0;
 
             x <= 10'd0;
             y <= 9'd0;
@@ -58,7 +58,7 @@ module vj_integral_builder_320x240 #(
             end
         end else begin
             ii_we <= 1'b0;
-            frame_done <= 1'b0;
+            build_done <= 1'b0;
 
             if (frame_start) begin
                 busy <= 1'b1;
@@ -115,7 +115,7 @@ module vj_integral_builder_320x240 #(
                             if (y == (IMG_H - 1)) begin
                                 y <= 9'd0;
                                 busy <= 1'b0;
-                                frame_done <= 1'b1;
+                                build_done <= 1'b1;
                             end else begin
                                 y <= y + 9'd1;
                             end

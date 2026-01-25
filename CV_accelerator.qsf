@@ -420,6 +420,7 @@ set_global_assignment -name SYSTEMVERILOG_FILE vj/vj_integral_builder_320x240.v
 set_global_assignment -name SYSTEMVERILOG_FILE vj/vj_rect_sum.v
 set_global_assignment -name SYSTEMVERILOG_FILE vj/vj_feature_rom_19x19.v
 set_global_assignment -name SYSTEMVERILOG_FILE vj/vj_cascade_eval_19x19_3stage.v
+set_global_assignment -name SYSTEMVERILOG_FILE vj/vj_cascade_eval_19x19_4stage.v
 set_global_assignment -name SYSTEMVERILOG_FILE vj/vj_scanner_19x19.v
 set_global_assignment -name SYSTEMVERILOG_FILE vj/vj_detector_19x19.v
 

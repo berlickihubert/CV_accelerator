@@ -81,9 +81,7 @@ module vga_controller(
     
     assign vram_addr = addr_calc;
 
-    // Support up to 10 boxes, packed in vectors.
-    // box_x/box_w are 10-bit packed (10 boxes => 100 bits)
-    // box_y/box_h are 9-bit packed (10 boxes => 90 bits)
+
     wire [9:0] box_border_i;
     genvar bi;
     generate

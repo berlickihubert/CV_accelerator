@@ -1,5 +1,11 @@
-module vj_stage_eval #(
-    parameter integer NUM_WEAK = 1,
+module vj_cascade_eval_19x19_4stage #(
+    // 4 stages with [ST0,ST1,ST2,ST3]
+    parameter integer ST0_WEAK = 2,
+    parameter integer ST1_WEAK = 5,
+    parameter integer ST2_WEAK = 10,
+    parameter integer ST3_WEAK = 15,
+    parameter integer TOTAL_WEAK = (ST0_WEAK + ST1_WEAK + ST2_WEAK + ST3_WEAK),
+
     parameter integer II_W = 321,
     parameter integer ADDR_W = 17,
     parameter integer II_DATA_W = 25,
@@ -17,13 +23,27 @@ module vj_stage_eval #(
     output wire [ADDR_W-1:0]    ii_raddr,
     input  wire [II_DATA_W-1:0] ii_rdata,
 
-    input  wire signed [31:0]   stage_threshold,
+    input  wire signed [31:0]   stage0_threshold,
+    input  wire signed [31:0]   stage1_threshold,
+    input  wire signed [31:0]   stage2_threshold,
+    input  wire signed [31:0]   stage3_threshold,
 
     output reg                  busy,
     output reg                  done,
     output reg                  pass,
-    output reg signed [31:0]    score
+
+    output reg signed [31:0]    score_out
 );
+
+    localparam integer S0_START = 0;
+    localparam integer S1_START = S0_START + ST0_WEAK;
+    localparam integer S2_START = S1_START + ST1_WEAK;
+    localparam integer S3_START = S2_START + ST2_WEAK;
+
+    localparam integer S0_LAST  = S1_START - 1;
+    localparam integer S1_LAST  = S2_START - 1;
+    localparam integer S2_LAST  = S3_START - 1;
+    localparam integer S3_LAST  = TOTAL_WEAK - 1;
 
     wire [2:0] rect_count;
 
@@ -40,10 +60,10 @@ module vj_stage_eval #(
     wire signed [ALPHA_W-1:0]  alpha;
     wire polarity;
 
-    reg [$clog2(NUM_WEAK)-1:0] weak_idx;
+    reg [$clog2(TOTAL_WEAK)-1:0] weak_idx;
 
     vj_feature_rom_19x19 #(
-        .NUM_WEAK(NUM_WEAK),
+        .NUM_WEAK(TOTAL_WEAK),
         .MAX_RECTS(4),
         .COORD_W(COORD_W),
         .THRESH_W(THRESH_W),
@@ -66,7 +86,6 @@ module vj_stage_eval #(
     reg [9:0] rect_w;
     reg [8:0] rect_h;
 
-    wire rect_busy;
     wire rect_done;
     wire signed [II_DATA_W:0] rect_sum;
 
@@ -84,7 +103,7 @@ module vj_stage_eval #(
         .h(rect_h),
         .ii_raddr(ii_raddr),
         .ii_rdata(ii_rdata),
-        .busy(rect_busy),
+        .busy(),
         .done(rect_done),
         .sum(rect_sum)
     );
@@ -96,14 +115,16 @@ module vj_stage_eval #(
     localparam S_RECT3  = 4'd4;
     localparam S_WEAK   = 4'd5;
     localparam S_NEXT   = 4'd6;
-    localparam S_DONE   = 4'd7;
+    localparam S_STAGE  = 4'd7;
+    localparam S_DONE   = 4'd8;
 
     reg [3:0] state;
 
+    reg [1:0] stage_id;
+    reg signed [31:0] stage_score_acc;
+
     reg signed [II_DATA_W+4:0] feat_acc;
     reg signed [II_DATA_W+4:0] feat_val;
-
-    reg signed [31:0] score_acc;
 
     function signed [II_DATA_W+4:0] apply_wt;
         input signed [II_DATA_W:0] s;
@@ -127,19 +148,59 @@ module vj_stage_eval #(
         end
     endtask
 
+    function signed [31:0] stage_threshold_sel;
+        input [1:0] sid;
+        begin
+            case (sid)
+                2'd0: stage_threshold_sel = stage0_threshold;
+                2'd1: stage_threshold_sel = stage1_threshold;
+                2'd2: stage_threshold_sel = stage2_threshold;
+                default: stage_threshold_sel = stage3_threshold;
+            endcase
+        end
+    endfunction
+
+    function integer stage_last_idx;
+        input [1:0] sid;
+        begin
+            case (sid)
+                2'd0: stage_last_idx = S0_LAST;
+                2'd1: stage_last_idx = S1_LAST;
+                2'd2: stage_last_idx = S2_LAST;
+                default: stage_last_idx = S3_LAST;
+            endcase
+        end
+    endfunction
+
+    function integer stage_next_start;
+        input [1:0] sid;
+        begin
+            case (sid)
+                2'd0: stage_next_start = S1_START;
+                2'd1: stage_next_start = S2_START;
+                2'd2: stage_next_start = S3_START;
+                default: stage_next_start = S3_START;
+            endcase
+        end
+    endfunction
+
     always @(posedge clk or negedge reset_n) begin
         if (!reset_n) begin
-            state <= S_IDLE;
             busy <= 1'b0;
             done <= 1'b0;
             pass <= 1'b0;
-            score <= 32'sd0;
+            score_out <= 32'sd0;
+            state <= S_IDLE;
+
+            stage_id <= 2'd0;
             weak_idx <= '0;
+            stage_score_acc <= 32'sd0;
+
             rect_start <= 1'b0;
             rect_x <= 0; rect_y <= 0; rect_w <= 0; rect_h <= 0;
+
             feat_acc <= '0;
             feat_val <= '0;
-            score_acc <= 32'sd0;
         end else begin
             done <= 1'b0;
             rect_start <= 1'b0;
@@ -149,8 +210,10 @@ module vj_stage_eval #(
                     busy <= 1'b0;
                     if (start) begin
                         busy <= 1'b1;
-                        weak_idx <= '0;
-                        score_acc <= 32'sd0;
+                        stage_id <= 2'd0;
+                        weak_idx <= S0_START[$clog2(TOTAL_WEAK)-1:0];
+                        stage_score_acc <= 32'sd0;
+                        score_out <= 32'sd0;
                         state <= S_RECT0;
                     end
                 end
@@ -221,24 +284,41 @@ module vj_stage_eval #(
                         reg signed [31:0] delta;
 
                         diff = feat_val - $signed(threshold);
-                        pred = polarity ? (diff >= 0) : (diff < 0);
+                        pred = polarity ? (diff >= 0) : (diff <= 0);
 
                         alpha_ext = {{(32-ALPHA_W){alpha[ALPHA_W-1]}}, alpha};
                         delta = pred ? alpha_ext : -alpha_ext;
-                        score_acc <= score_acc + delta;
+                        stage_score_acc <= stage_score_acc + delta;
                     end
 
-                    if (weak_idx == (NUM_WEAK - 1)) begin
-                        state <= S_DONE;
+                    if (weak_idx == stage_last_idx(stage_id)) begin
+                        state <= S_STAGE;
                     end else begin
                         weak_idx <= weak_idx + 1'b1;
                         state <= S_RECT0;
                     end
                 end
 
+                S_STAGE: begin
+                    if (stage_score_acc >= stage_threshold_sel(stage_id)) begin
+                        if (stage_id == 2'd3) begin
+                            pass <= 1'b1;
+                            score_out <= stage_score_acc;
+                            state <= S_DONE;
+                        end else begin
+                            stage_id <= stage_id + 2'd1;
+                            weak_idx <= stage_next_start(stage_id);
+                            stage_score_acc <= 32'sd0;
+                            state <= S_RECT0;
+                        end
+                    end else begin
+                        pass <= 1'b0;
+                        score_out <= stage_score_acc;
+                        state <= S_DONE;
+                    end
+                end
+
                 S_DONE: begin
-                    score <= score_acc;
-                    pass <= (score_acc >= stage_threshold);
                     done <= 1'b1;
                     busy <= 1'b0;
                     state <= S_IDLE;
