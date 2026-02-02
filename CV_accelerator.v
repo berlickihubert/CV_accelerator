@@ -26,13 +26,13 @@ module CV_accelerator(
 	input 		          		CLOCK_50,
 
 	//////////// SDRAM //////////
-	output		    [12:0]		DRAM_ADDR,
-	output		     [1:0]		DRAM_BA,
+	output	    [12:0]		DRAM_ADDR,
+	output	     [1:0]		DRAM_BA,
 	output		          		DRAM_CAS_N,
 	output		          		DRAM_CKE,
 	output		          		DRAM_CLK,
 	output		          		DRAM_CS_N,
-	inout 		    [15:0]		DRAM_DQ,
+	inout 	    [15:0]		DRAM_DQ,
 	output		          		DRAM_LDQM,
 	output		          		DRAM_RAS_N,
 	output		          		DRAM_UDQM,
@@ -43,22 +43,22 @@ module CV_accelerator(
 	inout 		          		FPGA_I2C_SDAT,
 
 	//////////// SEG7 //////////
-	output		     [6:0]		HEX0,
-	output		     [6:0]		HEX1,
-	output		     [6:0]		HEX2,
-	output		     [6:0]		HEX3,
-	output		     [6:0]		HEX4,
-	output		     [6:0]		HEX5,
+	output	     [6:0]		HEX0,
+	output	     [6:0]		HEX1,
+	output	     [6:0]		HEX2,
+	output	     [6:0]		HEX3,
+	output	     [6:0]		HEX4,
+	output	     [6:0]		HEX5,
 
 	//////////// IR //////////
 	input 		          		IRDA_RXD,
 	output		          		IRDA_TXD,
 
 	//////////// KEY //////////
-	input 		     [3:0]		KEY,
+	input 	     [3:0]		KEY,
 
 	//////////// LED //////////
-	output		     [9:0]		LEDR,
+	output	     [9:0]		LEDR,
 
 	//////////// PS2 //////////
 	inout 		          		PS2_CLK,
@@ -67,22 +67,22 @@ module CV_accelerator(
 	inout 		          		PS2_DAT2,
 
 	//////////// SW //////////
-	input 		     [9:0]		SW,
+	input 	     [9:0]		SW,
 
 	//////////// Video-In //////////
 	input 		          		TD_CLK27,
-	input 		     [7:0]		TD_DATA,
+	input 	     [7:0]		TD_DATA,
 	input 		          		TD_HS,
 	output		          		TD_RESET_N,
 	input 		          		TD_VS,
 
 	//////////// VGA //////////
 	output		          		VGA_BLANK_N,
-	output		     [7:0]		VGA_B,
+	output	     [7:0]		VGA_B,
 	output		          		VGA_CLK,
-	output		     [7:0]		VGA_G,
+	output	     [7:0]		VGA_G,
 	output		          		VGA_HS,
-	output		     [7:0]		VGA_R,
+	output	     [7:0]		VGA_R,
 	output		          		VGA_SYNC_N,
 	output		          		VGA_VS
 );
@@ -96,6 +96,18 @@ module CV_accelerator(
 wire [16:0] vga_addr;
 wire [7:0]  vga_data;
 wire        clk_25;
+
+wire        ram_wr_en;
+wire [16:0] ram_wr_addr;
+wire [7:0]  ram_wr_data;
+
+wire        avl_write;
+wire [16:0] avl_address;
+wire [7:0]  avl_writedata;
+wire        avl_read;
+wire [7:0]  avl_readdata;
+wire        avl_waitrequest;
+wire        avl_mm_reset;
 
 wire [16:0] fb_det_addr;
 wire [7:0]  fb_det_data;
@@ -154,13 +166,33 @@ always @(posedge CLOCK_50) begin
 end
 assign clk_25 = clk_div;
 
+assign ram_wr_en = avl_write;
+assign ram_wr_addr = avl_address;
+assign ram_wr_data = avl_writedata;
+
+assign avl_readdata = 8'b0;
+assign avl_waitrequest = 1'b0;
+
+avalon_jtag u_avalon_jtag (
+	.clk_clk                           (CLOCK_50),
+	.reset_reset_n                     (KEY[0]),
+	.AVL_MM_slave_0_avs_s0_address     (avl_address),
+	.AVL_MM_slave_0_avs_s0_read        (avl_read),
+	.AVL_MM_slave_0_avs_s0_readdata    (avl_readdata),
+	.AVL_MM_slave_0_avs_s0_write       (avl_write),
+	.AVL_MM_slave_0_avs_s0_writedata   (avl_writedata),
+	.AVL_MM_slave_0_avs_s0_waitrequest (avl_waitrequest),
+	.AVL_MM_slave_0_reset_reset        (avl_mm_reset)
+);
+
 ram2port_320x240 u_ram (
-    .clock      ( clk_25 ),
-    .data       ( 8'b0 ),
+    .clock_wr   ( CLOCK_50 ),
+	.clock_rd   ( clk_25 ),
+	.data       ( ram_wr_data ),
     .rdaddress  ( vga_addr ),
 	.rdaddress_a( fb_det_addr ),
-    .wraddress  ( 17'd0 ),
-    .wren       ( 1'b0 ),
+	.wraddress  ( ram_wr_addr ),
+	.wren       ( ram_wr_en ),
 	.q          ( vga_data ),
 	.qa         ( fb_det_data )
 );

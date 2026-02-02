@@ -16,3 +16,21 @@ Implemented:
 
 
 Viola Jones parameters training was performed in python using custom scripts. The trained parameters were then exported to be used in the FPGA implementation. Python training will be made available in the separate repository.
+
+# TCL script to load the MIF file into the FPGA memory
+```
+set m [lindex [get_service_paths master] 0]
+open_service master $m
+set base 0x00000000
+
+set fd [open "C:/your_path/img320x240.mif" r]
+while {[gets $fd line] >= 0} {
+    if {[regexp {^\s*([0-9A-Fa-f]+)\s*:\s*([0-9A-Fa-f]+)\s*;} $line -> addr data]} {
+        scan $addr %x a
+        scan $data %x d
+        master_write_8 $m [expr {$base + $a}] $d
+    }
+}
+close $fd
+close_service master $m
+```

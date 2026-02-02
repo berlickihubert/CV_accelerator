@@ -38,7 +38,8 @@
 `timescale 1 ps / 1 ps
 // synopsys translate_on
 module ram2port_320x240 (
-	clock,
+	clock_wr,
+	clock_rd,
 	data,
 	rdaddress,
 	rdaddress_a,
@@ -47,7 +48,8 @@ module ram2port_320x240 (
 	q,
 	qa);
 
-	input	  clock;
+	input	  clock_wr;
+	input	  clock_rd;
 	input	[7:0]  data;
 	input	[16:0]  rdaddress;
 	input	[16:0]  rdaddress_a;
@@ -58,7 +60,8 @@ module ram2port_320x240 (
 `ifndef ALTERA_RESERVED_QIS
 // synopsys translate_off
 `endif
-	tri1	  clock;
+	tri1	  clock_wr;
+	tri1	  clock_rd;
 	tri0	  wren;
 `ifndef ALTERA_RESERVED_QIS
 // synopsys translate_on
@@ -83,7 +86,7 @@ module ram2port_320x240 (
 	altsyncram	altsyncram_component (
 				.address_a (wraddress),
 				.address_b (rdaddress),
-				.clock0 (clock),
+				.clock0 (clock_wr),
 				.data_a (data),
 				.wren_a (wren),
 				.q_b (sub_wire0),
@@ -94,7 +97,7 @@ module ram2port_320x240 (
 				.addressstall_b (1'b0),
 				.byteena_a (1'b1),
 				.byteena_b (1'b1),
-				.clock1 (1'b1),
+				.clock1 (clock_rd),
 				.clocken0 (1'b1),
 				.clocken1 (1'b1),
 				.clocken2 (1'b1),
@@ -106,7 +109,7 @@ module ram2port_320x240 (
 				.wren_b (1'b0));
 	defparam
 		altsyncram_component.address_aclr_b = "NONE",
-		altsyncram_component.address_reg_b = "CLOCK0",
+		altsyncram_component.address_reg_b = "CLOCK1",
 		altsyncram_component.address_reg_a = "CLOCK0",
 		altsyncram_component.clock_enable_input_a = "BYPASS",
 		altsyncram_component.clock_enable_input_b = "BYPASS",
@@ -119,7 +122,7 @@ module ram2port_320x240 (
 		altsyncram_component.numwords_b = 76800,
 		altsyncram_component.operation_mode = "DUAL_PORT",
 		altsyncram_component.outdata_aclr_b = "NONE",
-		altsyncram_component.outdata_reg_b = "CLOCK0",
+		altsyncram_component.outdata_reg_b = "CLOCK1",
 		altsyncram_component.outdata_reg_a = "CLOCK0",
 		altsyncram_component.power_up_uninitialized = "FALSE",
 		altsyncram_component.read_during_write_mode_mixed_ports = "DONT_CARE",
@@ -132,7 +135,7 @@ module ram2port_320x240 (
 	altsyncram	altsyncram_component_det (
 				.address_a (wraddress),
 				.address_b (rdaddress_a),
-				.clock0 (clock),
+				.clock0 (clock_wr),
 				.data_a (data),
 				.wren_a (wren),
 				.q_b (sub_wire1),
@@ -143,7 +146,7 @@ module ram2port_320x240 (
 				.addressstall_b (1'b0),
 				.byteena_a (1'b1),
 				.byteena_b (1'b1),
-				.clock1 (1'b1),
+				.clock1 (clock_rd),
 				.clocken0 (1'b1),
 				.clocken1 (1'b1),
 				.clocken2 (1'b1),
@@ -155,7 +158,7 @@ module ram2port_320x240 (
 				.wren_b (1'b0));
 	defparam
 		altsyncram_component_det.address_aclr_b = "NONE",
-		altsyncram_component_det.address_reg_b = "CLOCK0",
+		altsyncram_component_det.address_reg_b = "CLOCK1",
 		altsyncram_component_det.address_reg_a = "CLOCK0",
 		altsyncram_component_det.clock_enable_input_a = "BYPASS",
 		altsyncram_component_det.clock_enable_input_b = "BYPASS",
@@ -168,7 +171,7 @@ module ram2port_320x240 (
 		altsyncram_component_det.numwords_b = 76800,
 		altsyncram_component_det.operation_mode = "DUAL_PORT",
 		altsyncram_component_det.outdata_aclr_b = "NONE",
-		altsyncram_component_det.outdata_reg_b = "CLOCK0",
+		altsyncram_component_det.outdata_reg_b = "CLOCK1",
 		altsyncram_component_det.outdata_reg_a = "CLOCK0",
 		altsyncram_component_det.power_up_uninitialized = "FALSE",
 		altsyncram_component_det.read_during_write_mode_mixed_ports = "DONT_CARE",

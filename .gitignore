@@ -69,3 +69,6 @@ ip/**
 !db/.gitkeep
 !incremental_db/.gitkeep
 !greybox_tmp/.gitkeep
+
+
+group_portrait_*.jpg

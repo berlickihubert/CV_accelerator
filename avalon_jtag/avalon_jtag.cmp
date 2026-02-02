@@ -1,0 +1,14 @@
+	component avalon_jtag is
+		port (
+			AVL_MM_slave_0_avs_s0_address     : out std_logic_vector(16 downto 0);                    -- address
+			AVL_MM_slave_0_avs_s0_read        : out std_logic;                                        -- read
+			AVL_MM_slave_0_avs_s0_readdata    : in  std_logic_vector(7 downto 0)  := (others => 'X'); -- readdata
+			AVL_MM_slave_0_avs_s0_write       : out std_logic;                                        -- write
+			AVL_MM_slave_0_avs_s0_writedata   : out std_logic_vector(7 downto 0);                     -- writedata
+			AVL_MM_slave_0_avs_s0_waitrequest : in  std_logic                     := 'X';             -- waitrequest
+			AVL_MM_slave_0_reset_reset        : out std_logic;                                        -- reset
+			clk_clk                           : in  std_logic                     := 'X';             -- clk
+			reset_reset_n                     : in  std_logic                     := 'X'              -- reset_n
+		);
+	end component avalon_jtag;
+

@@ -2,7 +2,7 @@ from PIL import Image
 import os
 
 def png_to_mif():
-    input_png = r"C:\Users\berli\Desktop\studia\fpga\projekt\group_portrait_13.jpg"
+    input_png = r"C:\Users\berli\Desktop\studia\fpga\projekt\group_portrait_15.jpg"
     output_mif = r"C:\Users\berli\Desktop\studia\fpga\projekt\img320x240.mif"
 
     if not os.path.exists(input_png):

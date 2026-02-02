@@ -33,7 +33,8 @@
 //on the Quartus Prime software download page.
 
 module ram2port_320x240 (
-	clock,
+	clock_wr,
+	clock_rd,
 	data,
 	rdaddress,
 	rdaddress_a,
@@ -42,7 +43,8 @@ module ram2port_320x240 (
 	q,
 	qa);
 
-	input	  clock;
+	input	  clock_wr;
+	input	  clock_rd;
 	input	[7:0]  data;
 	input	[16:0]  rdaddress;
 	input	[16:0]  rdaddress_a;
@@ -53,7 +55,8 @@ module ram2port_320x240 (
 `ifndef ALTERA_RESERVED_QIS
 // synopsys translate_off
 `endif
-	tri1	  clock;
+	tri1	  clock_wr;
+	tri1	  clock_rd;
 	tri0	  wren;
 `ifndef ALTERA_RESERVED_QIS
 // synopsys translate_on
